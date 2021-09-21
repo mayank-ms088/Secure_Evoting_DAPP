@@ -1,0 +1,31 @@
+{
+  "name": "Test_script",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --exec babel-node ./app.js",
+    "build": "npm run clean && npm run build-babel",
+    "clean": "rm -rf build && mkdir build",
+    "build-babel": "babel -d ./build ./app.js -s"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/cli": "^7.14.5",
+    "@babel/core": "^7.14.6",
+    "express": "^4.17.1",
+    "express-session": "^1.17.2",
+    "passport": "^0.4.1",
+    "passport-google-oauth": "^2.0.0"
+  },
+  "devDependencies": {
+    "@babel/node": "^7.14.5",
+    "@babel/plugin-transform-runtime": "^7.14.5",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.14.5",
+    "@babel/runtime": "^7.14.6",
+    "nodemon": "^2.0.7"
+  }
+}
