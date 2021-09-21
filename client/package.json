@@ -17,7 +17,7 @@
         "nprogress": "^0.2.0",
         "prop-types": "15.7.2",
         "react": "17.0.2",
-        "react-datetime": "3.0.4",
+        "react-datetime": "^3.0.4",
         "react-dom": "17.0.2",
         "react-google-button": "^0.7.2",
         "react-google-login": "^5.2.2",
@@ -29,6 +29,7 @@
         "redux-devtools-extension": "^2.13.9",
         "redux-logger": "^3.0.6",
         "redux-thunk": "^2.3.0",
+        "truffle-contract": "^4.0.31",
         "web3": "^1.5.2"
     },
     "devDependencies": {
