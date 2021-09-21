@@ -3,6 +3,7 @@ export const registerToVote = function ({
   email,
   permreq,
   Registrar,
+  onRegister,
 }) {
   //var t0 = performance.now()
 
@@ -17,18 +18,15 @@ export const registerToVote = function ({
       var domainValid = v.toString();
 
       if (domainValid == "false") {
-        window.alert("Invalid e-mail address!");
-        //$("#msg2").html("Invalid e-mail address!")
-        throw new Error();
+        return "invalid email";
       }
 
       contract.checkReg.call(email, idNumber).then(function (v) {
         var emailValid = v.toString();
 
         if (emailValid == "false") {
-          window.alert("E-mail/ID Number already registered to vote!");
-          //$("#msg2").html("E-mail already registered to vote!")
-          throw new Error();
+          onRegister("already Registered");
+          return;
         }
 
         contract
@@ -37,10 +35,8 @@ export const registerToVote = function ({
             from: web3.eth.accounts[0],
           })
           .then(function () {
-            //$("#msg2").html("Account ready to vote!")
-            window.alert("Account ready to vote!");
-            /*var t1 = performance.now()
-                    window.alert('It took' + (t1 - t0) + 'ms to finish')*/
+            onRegister("registered");
+            return;
           });
       });
     });
