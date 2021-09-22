@@ -27,7 +27,7 @@ export default function HeaderLinks(props) {
   const classes = useStyles();
   return (
     <List className={classes.list}>
-      {/* <ListItem className={classes.listItem}>
+      <ListItem className={classes.listItem}>
         <CustomDropdown
           noLiPadding
           buttonText="Components"
@@ -49,29 +49,14 @@ export default function HeaderLinks(props) {
             </a>,
           ]}
         />
-      </ListItem> */}
-      <Box flexGrow={1}></Box>
-      <ListItem className={classes.listItem}>
-        <Button
-          href="/home"
-          color="transparent"
-          target="_blank"
-          className={classes.navLink}
-          style={{
-            color: "white",
-            fontSize: "1em",
-            fontFamily: "Comic Sans MS",
-          }}
-        >
-          Back to Home
-        </Button>
       </ListItem>
+
       <ListItem className={classes.listItem}>
-        {/*<Tooltip title="Delete">
+        <Tooltip title="Delete">
           <IconButton aria-label="Delete">
             <DeleteIcon />
           </IconButton>
-        </Tooltip>*/}
+        </Tooltip>
         <Tooltip
           id="instagram-twitter"
           title="Follow us on twitter"

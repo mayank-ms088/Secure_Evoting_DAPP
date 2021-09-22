@@ -69,8 +69,8 @@ contract Voting {
      
         for(uint i = 0; i < c.candidateList.length; i++) {
             tempCandidate = c.candidateList[i];
-            c.candidateHash[tempCandidate] = sha256(abi.encodePacked(tempCandidate));
-            c.votesReceived[sha256(abi.encodePacked(tempCandidate))] = 1;
+            c.candidateHash[tempCandidate] = keccak256(abi.encodePacked(tempCandidate));
+            c.votesReceived[keccak256(abi.encodePacked(tempCandidate))] = 1;
         }
     }
 

@@ -1,6 +1,7 @@
 import { Mail } from "@material-ui/icons";
 import { useSelector } from "react-redux";
-const axios = require("axios");
+import axios from "axios";
+import { sha3withsize } from "solidity-sha3";
 
 export const registerToVote = function ({
   idNum,
@@ -55,26 +56,23 @@ export const registerToVote = function ({
     });
   });
 };
-export const loadBallot = function ({ ballotID, onLoad }) {
-  const obj = useSelector((o) => o);
+export const getData = function ({ ballotID, onLoad, obj }) {
   const {
     web3,
     accounts,
     contracts: { Registrar },
   } = obj;
-  candidates = {};
-
+  const candidates = {};
+  // console.log(typeof ballotID);
   Registrar.deployed().then(function (contract) {
-    contract.getAddress
-      .call(web3.utils.asciiToHex(ballotID))
-      .then(function (v) {
-        var votingAddress = v.toString();
-        if (votingAddress == 0) {
-          onLoad("Invalid BallotID!");
-        } else {
-          getCandidates(votingAddress, ballotID);
-        }
-      });
+    contract.getAddress.call(Number(ballotID)).then(function (v) {
+      var votingAddress = v.toString();
+      if (votingAddress == 0) {
+        onLoad("Invalid BallotID!");
+      } else {
+        onLoad("success", getCandidates(votingAddress, ballotID, onLoad, obj));
+      }
+    });
   });
 };
 export const voteForCandidate = function ({
@@ -493,77 +491,77 @@ function fillWhitelisted(votingAddress, whitelistedArray, accounts, Voting) {
 
 //End ballot creation process
 
-function getCandidates(votingAddress, ballotID) {
-  Voting.at(votingAddress).then(function (contract) {
-    contract.getTitle.call().then(function (title) {
-      $("#btitle").html(title);
+async function getCandidates(votingAddress, ballotID, onLoad, obj) {
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
+  const candidates = {};
+  const voting = await Voting.at(votingAddress);
+  const title = await voting.getTitle.call();
 
-      contract.candidateList.call(ballotID).then(function (candidateArray) {
-        for (let i = 0; i < candidateArray.length; i++) {
-          candidates[web3.toUtf8(candidateArray[i])] = "candidate-" + i;
-        }
-
-        setupTable();
-        getVotes(votingAddress);
-      });
-    });
-  });
+  const candidateArray = await voting.candidateList.call(ballotID);
+  for (let i = 0; i < candidateArray.length; i++) {
+    candidates[web3.utils.toUtf8(candidateArray[i])] = "candidate-" + i;
+  }
+  const data = getVotes(votingAddress, candidates, obj);
+  return { data: data, title: title };
 }
 
-function setupTable() {
-  Object.keys(candidates).forEach(function (candidate) {
-    $("#candidate-rows").append(
-      "<tr><td>" +
-        candidate +
-        "</td><td id='" +
-        candidates[candidate] +
-        "'></td></tr>"
-    );
-  });
-}
+// function setupTable() {
+//   Object.keys(candidates).forEach(function (candidate) {
+//     $("#candidate-rows").append(
+//       "<tr><td>" +
+//         candidate +
+//         "</td><td id='" +
+//         candidates[candidate] +
+//         "'></td></tr>"
+//     );
+//   });
+// }
 
-function getVotes(votingAddress) {
+async function getVotes(votingAddress, candidates, obj) {
   let candidateNames = Object.keys(candidates);
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
+  const data = [];
   for (var i = 0; i < candidateNames.length; i++) {
     let name = candidateNames[i];
-    let cvHash = sha3withsize(name, 32);
+    let cvHash = sha3withsize(web3.utils.asciiToHex(name), 32);
+    let votes = 0;
+    const voting = await Voting.at(votingAddress);
+    var convVote = await voting.totalVotesFor.call(cvHash);
+    convVote = convVote.toString();
 
-    Voting.at(votingAddress).then(function (contract) {
-      contract.totalVotesFor.call(cvHash).then(function (v) {
-        var convVote = v.toString();
-        if (convVote == 0) {
-          contract.getTimelimit.call().then(function (v) {
-            var endtime = v.toString();
-            //Testnet is plus 7 hours, uncomment this line if testing on testnet
-            //endtime = endtime - 21600
-            endtime = new Date(endtime * 1000);
-            $("#msg").html(
-              "Results will be displayed once the voting period has ended (" +
-                endtime +
-                ")"
-            );
-            //window.alert("Results will be displayed once the voting period has ended (" + endtime + ")")
-          });
-        } else {
-          convVote = scientificToDecimal(convVote);
-          decrypt(convVote, name);
-        }
-      });
-    });
+    // if (convVote == 0) {
+    //   var endtime = await voting.getTimelimit.call();
+    //   endtime = endtime.toString();
+    //   //Testnet is plus 7 hours, uncomment this line if testing on testnet
+    //   //endtime = endtime - 21600
+    //   endtime = new Date(endtime * 1000);
+    //   // $("#msg").html(
+    //   //   "Results will be displayed once the voting period has ended (" +
+    //   //     endtime +
+    //   //     ")"
+    //   // );
+    //   // window.alert("Results will be displayed once the voting period has ended (" + endtime + ")")
+    // } else {
+    convVote = scientificToDecimal(convVote);
+    votes = decrypt(convVote, name);
+    // }
+    data.push({ id: cvHash, name: name, votes: votes });
   }
+  return data;
 }
 
-function decrypt(convVote, name) {
-  const url = "http://localhost:3000/decrypt/" + convVote;
-  axios
-    .get(url)
-    .then(function (response) {
-      var voteNum = response;
-      $("#" + candidates[name]).html(voteNum.toString());
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
+async function decrypt(convVote, name) {
+  const url = "http://localhost:8080/decrypt/" + convVote;
+  const votes = await axios.get(url);
+  return votes;
 
   // $.ajax({
   //     type: "GET",

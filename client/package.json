@@ -15,6 +15,8 @@
         "@mui/styled-engine-sc": "^5.0.0",
         "axios": "^0.21.4",
         "classnames": "2.3.1",
+        "crypto": "^1.0.1",
+        "crypto-js": "^3.3.0",
         "moment": "2.29.1",
         "mui": "^0.0.1",
         "node-sass": "6.0.0",
@@ -36,6 +38,7 @@
         "redux-devtools-extension": "^2.13.9",
         "redux-logger": "^3.0.6",
         "redux-thunk": "^2.3.0",
+        "solidity-sha3": "^0.4.1",
         "styled-components": "^5.3.1",
         "truffle-contract": "^4.0.31",
         "web3": "^1.5.2"

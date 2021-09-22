@@ -32,6 +32,11 @@ const routesConfig = [
   },
   {
     exact: true,
+    path: "/ballot",
+    component: lazy(() => import("./views/Ballot")),
+  },
+  {
+    exact: true,
     path: "/home",
     component: lazy(() => import("./views/Home")),
   },
