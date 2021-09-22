@@ -129,16 +129,16 @@ function LoadBallot({
   enqueueSnackbar,
   proData,
 }) {
+  console.log(ballotId);
   const classes = useStyles();
   const [data, setData] = useState(null);
   const obj = useSelector((o) => o);
   const onLoad = (i, data) => {
-    console.log(data);
-    // if (i != "success") {
-    //   enqueueSnackbar(i, { variant: "error" });
-    // } else {
-    //   setData(data);
-    // }
+    if (i != "success") {
+      enqueueSnackbar(i, { variant: "error" });
+    } else {
+      setData(data);
+    }
   };
   const handleLoad = () => {
     getData({ ballotID: ballotId, onLoad: onLoad, obj: obj });
@@ -195,6 +195,7 @@ function LoadBallot({
               data: data["data"],
               proData: proData,
               title: data["title"],
+              ballotid: ballotId,
             },
           }}
         />

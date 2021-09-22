@@ -39,6 +39,7 @@ import { useSelector } from "react-redux";
 import { useSnackbar } from "notistack";
 import { ballotSetup } from "core/utils/utils.js";
 import CustomTables from "./Table.js";
+import { voteForCandidate } from "core/utils/utils.js";
 
 const useStyles = makeStyles(styles);
 
@@ -46,12 +47,7 @@ export default function Ballot(props) {
   const classes = useStyles();
   const {
     location: {
-      state: {
-        proData: { profileObj },
-        data,
-        title,
-        ballotid,
-      },
+      state: { proData: profileObj, data, title, ballotid },
     },
   } = props;
   const obj = useSelector((o) => o);
@@ -61,11 +57,22 @@ export default function Ballot(props) {
     classes.imgFluid
   );
   const { enqueueSnackbar } = useSnackbar();
-
+  const [vote, setVote] = useState({
+    candidate: "",
+    email: profileObj["email"],
+    obj: obj,
+    ballotID: ballotid,
+  });
   const tableData = [];
   data.map((v) => {
     tableData.push({ candidateID: v.id, candidateName: v.name });
   });
+  const onVote = (i) => {
+    console.log(i);
+  };
+  const handleVote = () => {
+    voteForCandidate({ ...vote, onVote: onVote });
+  };
   return (
     <div>
       <div className={classes.navigation}>
@@ -145,8 +152,15 @@ export default function Ballot(props) {
                 <Box display="flex" width="100%" justifyContent="center" py={4}>
                   <CustomTables
                     rows={tableData}
-                    selectCandidate={(i) => console.log(i)}
+                    selectCandidate={(i) =>
+                      setVote({ ...vote, candidate: i.name })
+                    }
                   />
+                </Box>
+              </GridItem>
+              <GridItem xs={12}>
+                <Box display="flex" width="100%" justifyContent="center" py={4}>
+                  <Button onClick={handleVote}>Vote</Button>
                 </Box>
               </GridItem>
             </GridContainer>

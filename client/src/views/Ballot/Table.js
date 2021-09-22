@@ -75,9 +75,9 @@ export default function CustomTables(props) {
     setRowsPerPage(+event.target.value);
     setPage(0);
   };
-  const handleSelect = (name) => () => {
-    setSelectedEnabled(name);
-    props.selectCandidate(name);
+  const handleSelect = (row) => () => {
+    setSelectedEnabled(row.ID);
+    props.selectCandidate(row);
   };
 
   return (
@@ -121,7 +121,7 @@ export default function CustomTables(props) {
                           control={
                             <Radio
                               checked={SelectedEnabled === row.ID}
-                              onChange={handleSelect(row.ID)}
+                              onChange={handleSelect(row)}
                               value="a"
                               name="radio button enabled"
                               aria-label="A"

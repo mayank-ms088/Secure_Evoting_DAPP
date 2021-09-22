@@ -56,7 +56,7 @@ export const registerToVote = function ({
     });
   });
 };
-export const getData = function ({ ballotID, onLoad, obj }) {
+export const getData = async function ({ ballotID, onLoad, obj }) {
   const {
     web3,
     accounts,
@@ -65,124 +65,111 @@ export const getData = function ({ ballotID, onLoad, obj }) {
   const candidates = {};
   // console.log(typeof ballotID);
   Registrar.deployed().then(function (contract) {
-    contract.getAddress.call(Number(ballotID)).then(function (v) {
+    contract.getAddress.call(Number(ballotID)).then(async function (v) {
       var votingAddress = v.toString();
       if (votingAddress == 0) {
         onLoad("Invalid BallotID!");
       } else {
-        onLoad("success", getCandidates(votingAddress, ballotID, onLoad, obj));
+        const data = await getCandidates(votingAddress, ballotID, onLoad, obj);
+        onLoad("success", data);
       }
     });
   });
 };
-export const voteForCandidate = function ({
+export const voteForCandidate = async function ({
   candidate,
   email,
-  Registrar,
-  Voting,
+  obj,
+  onVote,
+  ballotID,
 }) {
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
   var domain = email.replace(/.*@/, "");
-  var cHash = sha3withsize(candidate, 32);
+  var cHash = sha3withsize(web3.utils.asciiToHex(candidate), 32);
 
   var votesArray = [];
 
-  Registrar.deployed().then(function (contract) {
-    contract
-      .checkVoter(email, {
-        gas: 2500000,
-        from: accounts[0],
-      })
-      .then(function (v) {
-        var voterCheck = v.toString();
-
-        if (voterCheck == 1) {
-          window.alert("E-mail address not registered!");
-          //$("#msg").html("E-mail address not registered!")
-          throw new Error();
-        } else if (voterCheck == 2) {
-          window.alert("E-mail address and Ethereum address mismatch!");
-          //$("#msg").html("E-mail address and Ethereum address mismatch!")
-          throw new Error();
-        }
-
-        contract.getAddress.call(ballotID).then(function (v) {
-          var votingAddress = v.toString();
-
-          Voting.at(votingAddress).then(function (contract) {
-            contract.checkWhitelist.call().then(function (v) {
-              let wc1 = v.toString();
-              contract.checkifWhitelisted.call(email).then(function (v) {
-                let wc2 = v.toString();
-                if (wc1 == "true" && wc2 == "false") {
-                  window.alert(
-                    "You're are not authorized to vote on this ballot!"
-                  );
-                  //$("#msg").html("You're are not authorized to vote on this ballot!")
-                  throw new Error();
-                } else {
-                  contract.validCandidate.call(cHash).then(function (v) {
-                    var candValid = v.toString();
-
-                    if (candValid == "false") {
-                      window.alert("Invalid Candidate!");
-                      //$("#msg").html("Invalid Candidate!")
-                      throw new Error();
-                    }
-                    contract.checkVoteattempts.call().then(function (v) {
-                      var attempCheck = v.toString();
-
-                      if (attempCheck == "false") {
-                        window.alert(
-                          "You have reached your voting limit for this ballot/poll!"
-                        );
-                        //$("#msg").html("You have reached your voting limit for this ballot/poll!")
-                        throw new Error();
-                      }
-                      $("#msg").html(
-                        "Your vote attempt has been submitted. Please wait for verification."
-                      );
-                      $("#candidate").val("");
-                      $("#e-mail").val("");
-
-                      contract.candidateList
-                        .call(ballotID)
-                        .then(function (candidateArray) {
-                          for (let i = 0; i < candidateArray.length; i++) {
-                            let hcand = web3.toUtf8(candidateArray[i]);
-                            let hcHash = sha3withsize(hcand, 32);
-
-                            if (hcHash == cHash) {
-                              encrypt(
-                                hcHash,
-                                input1,
-                                i,
-                                candidateArray,
-                                email,
-                                votingAddress,
-                                votesArray
-                              );
-                            } else {
-                              encrypt(
-                                hcHash,
-                                input2,
-                                i,
-                                candidateArray,
-                                email,
-                                votingAddress,
-                                votesArray
-                              );
-                            }
-                          }
-                        });
-                    });
-                  });
-                }
-              });
-            });
-          });
-        });
-      });
+  const registrar = await Registrar.deployed();
+  var voterCheck = await registrar.checkVoter(web3.utils.asciiToHex(email), {
+    gas: 2500000,
+    from: accounts[0],
   });
+  voterCheck = voterCheck.toString();
+
+  if (voterCheck == 1) {
+    onVote("E-mail address not registered!");
+  } else if (voterCheck == 2) {
+    onVote("E-mail address and Ethereum address mismatch!");
+  }
+
+  var votingAddress = await registrar.getAddress.call(ballotID);
+  votingAddress = votingAddress.toString();
+
+  const voting = await Voting.at(votingAddress);
+  const wc1 = await voting.checkWhitelist.call();
+  let wc2 = await voting.checkifWhitelisted
+    .call(web3.utils.asciiToHex(email))
+    .toString();
+
+  if (wc1 == "true" && wc2 == "false") {
+    onVote("You're are not authorized to vote on this ballot!");
+    return;
+  } else {
+    var candValid = await voting.validCandidate.call(cHash).toString();
+
+    if (candValid == "false") {
+      onVote("Invalid Candidate!");
+      return;
+    }
+    var attempCheck = await voting.checkVoteattempts.call().toString();
+
+    if (attempCheck == "false") {
+      onVote("You have reached your voting limit for this ballot/poll!");
+      return;
+    }
+    onVote(
+      "Your vote attempt has been submitted. Please wait for verification."
+    );
+
+    const candidateArray = await voting.candidateList.call(ballotID);
+
+    for (let i = 0; i < candidateArray.length; i++) {
+      let hcand = web3.utils.toUtf8(candidateArray[i]);
+      let hcHash = sha3withsize(web3.utils.asciiToHex(hcand), 32);
+      var input1 = 1;
+      var input2 = 0;
+
+      if (hcHash == cHash) {
+        encrypt(
+          hcHash,
+          input1,
+          i,
+          candidateArray,
+          email,
+          votingAddress,
+          votesArray,
+          onVote,
+          obj
+        );
+      } else {
+        encrypt(
+          hcHash,
+          input2,
+          i,
+          candidateArray,
+          email,
+          votingAddress,
+          votesArray,
+          onVote,
+          obj
+        );
+      }
+    }
+  }
 };
 
 function encrypt(
@@ -192,8 +179,15 @@ function encrypt(
   candidateArray,
   email,
   votingAddress,
-  votesArray
+  votesArray,
+  onVote,
+  obj
 ) {
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
   var einput1;
   const url = "http://localhost:8080/encrypt/" + vnum;
   axios
@@ -202,7 +196,7 @@ function encrypt(
       Voting.at(votingAddress).then(function (contract) {
         contract.votesFor.call(hcHash).then(function (v) {
           einput1 = v.toString();
-          einput1 = scientificToDecimal(einput1);
+          einput1 = Number(einput1);
 
           if (einput1 != 0) {
             add(
@@ -212,7 +206,9 @@ function encrypt(
               candidateArray,
               email,
               votingAddress,
-              votesArray
+              votesArray,
+              onVote,
+              obj
             );
           }
         });
@@ -228,7 +224,7 @@ function encrypt(
   //         Voting.at(votingAddress).then(function(contract) {
   //             contract.votesFor.call(hcHash).then(function(v) {
   //                 einput1 = v.toString()
-  //                 einput1 = scientificToDecimal(einput1)
+  //                 einput1 = Number(einput1)
 
   //                 if (einput1 != 0) {
   //                     add(eoutput1, einput1, i, candidateArray, email, votingAddress, votesArray)
@@ -246,19 +242,23 @@ function add(
   candidateArray,
   email,
   votingAddress,
-  votesArray
+  votesArray,
+  onVote,
+  obj
 ) {
-  const url = "http://localhost:3000/add/" + eoutput1 + "/" + einput1;
+  const url = "http://localhost:8080/add/" + eoutput1 + "/" + einput1;
   axios
     .get(url)
     .then(function (response) {
       verifyTimestamp(
-        response,
+        response.data,
         i,
         candidateArray,
         email,
         votingAddress,
-        votesArray
+        votesArray,
+        onVote,
+        obj
       );
     })
     .catch(function (error) {
@@ -279,8 +279,15 @@ function verifyTimestamp(
   candidateArray,
   email,
   votingAddress,
-  votesArray
+  votesArray,
+  onVote,
+  obj
 ) {
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
   Voting.at(votingAddress).then(function (contract) {
     contract.checkTimelimit.call().then(function (v) {
       var timecheck = v.toString();
@@ -290,34 +297,54 @@ function verifyTimestamp(
           //Testnet is plus 7 hours, uncomment this line if testing on testnet
           //endtime = endtime - 21600
           endtime = new Date(endtime * 1000);
-          getVotes(votingAddress);
           //window.alert("Voting period for this ballot has ended on " +endtime)
-          $("#msg").html(
-            "Voting period for this ballot has ended on " + endtime
-          );
-          throw new Error();
+          onVote("Voting period for this ballot has ended on " + endtime);
         });
       } else {
         votesArray[i] = eadd1;
         if (i == candidateArray.length - 1) {
-          vote(i, candidateArray, email, votingAddress, votesArray);
+          vote(
+            i,
+            candidateArray,
+            email,
+            votingAddress,
+            votesArray,
+            onVote,
+            obj
+          );
         }
       }
     });
   });
 }
 
-function vote(i, candidateArray, email, votingAddress, votesArray) {
+function vote(
+  i,
+  candidateArray,
+  email,
+  votingAddress,
+  votesArray,
+  onVote,
+  obj
+) {
+  const {
+    web3,
+    accounts,
+    contracts: { Registrar, Voting },
+  } = obj;
   Voting.at(votingAddress).then(function (contract) {
     contract
-      .voteForCandidate(votesArray, email, candidateArray, {
-        gas: 2500000,
-        from: accounts[0],
-      })
+      .voteForCandidate(
+        votesArray,
+        web3.utils.asciiToHex(email),
+        candidateArray,
+        {
+          gas: 2500000,
+          from: accounts[0],
+        }
+      )
       .then(function () {
-        getVotes(votingAddress);
-        $("#msg").html("");
-        window.alert("Your vote has been verified!");
+        onVote("success");
       });
   });
 }
@@ -505,7 +532,7 @@ async function getCandidates(votingAddress, ballotID, onLoad, obj) {
   for (let i = 0; i < candidateArray.length; i++) {
     candidates[web3.utils.toUtf8(candidateArray[i])] = "candidate-" + i;
   }
-  const data = getVotes(votingAddress, candidates, obj);
+  const data = await getVotes(votingAddress, candidates, obj);
   return { data: data, title: title };
 }
 
@@ -550,8 +577,8 @@ async function getVotes(votingAddress, candidates, obj) {
     //   // );
     //   // window.alert("Results will be displayed once the voting period has ended (" + endtime + ")")
     // } else {
-    convVote = scientificToDecimal(convVote);
-    votes = decrypt(convVote, name);
+
+    votes = await decrypt(convVote, name);
     // }
     data.push({ id: cvHash, name: name, votes: votes });
   }
@@ -561,7 +588,7 @@ async function getVotes(votingAddress, candidates, obj) {
 async function decrypt(convVote, name) {
   const url = "http://localhost:8080/decrypt/" + convVote;
   const votes = await axios.get(url);
-  return votes;
+  return await votes.data;
 
   // $.ajax({
   //     type: "GET",

@@ -17,6 +17,7 @@
         "classnames": "2.3.1",
         "crypto": "^1.0.1",
         "crypto-js": "^3.3.0",
+        "jspaillier": "^0.1.1",
         "moment": "2.29.1",
         "mui": "^0.0.1",
         "node-sass": "6.0.0",

@@ -78,8 +78,8 @@ const http = require("http");
 
 var express = require("express");
 var paillier = require("jspaillier");
-var jsbn = require("jsbn");
 var body = require("body-parser");
+var BigInteger = require("jsbn").BigInteger;
 require("datejs");
 
 var app = express();
@@ -108,22 +108,20 @@ app.use(function (req, res, next) {
 
 app.get("/encrypt/:id", function (req, res) {
   var ekey = req.params.id;
-  ekey = keys.pub.encrypt(keys.pub.convertToBn(ekey)).toString();
+  ekey = keys.pub.encrypt(new BigInteger(ekey)).toString();
   res.send(ekey);
 });
 
 app.get("/decrypt/:id", function (req, res) {
   var dkey = req.params.id;
-  dkey = keys.sec.decrypt(keys.pub.convertToBn(dkey)).toString();
+  dkey = keys.sec.decrypt(new BigInteger(dkey)).toString();
   res.send(dkey);
 });
 
 app.get("/add/:id/:id2", function (req, res) {
   var ein1 = req.params.id;
   var ein2 = req.params.id2;
-  eadd = keys.pub
-    .add(keys.pub.convertToBn(ein1), keys.pub.convertToBn(ein2))
-    .toString();
+  eadd = keys.pub.add(new BigInteger(ein1), new BigInteger(ein2)).toString();
   res.send(eadd);
 });
 
