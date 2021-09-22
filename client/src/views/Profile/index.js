@@ -12,6 +12,8 @@ import GridItem from "components/Grid/GridItem.js";
 import Parallax from "components/Parallax/Parallax.js";
 import Button from "components/CustomButtons/Button";
 import Datetime from "react-datetime";
+import List from "components/Header/HeaderLinks";
+import ListItem from "components/Header/HeaderLinks";
 import {
   Box,
   Checkbox,
@@ -31,6 +33,7 @@ import { registerToVote } from "core/utils/utils.js";
 import { useSelector } from "react-redux";
 import { useSnackbar } from "notistack";
 import { ballotSetup } from "core/utils/utils.js";
+import { set } from "nprogress";
 
 const useStyles = makeStyles(styles);
 
@@ -112,6 +115,64 @@ function Register({
     </Dialog>
   );
 }
+
+function LoadBallot({
+  ballotId,
+  onBallotIdChange,
+  onClose,
+}) {
+  const classes = useStyles();
+  const onLoad = (i) => {
+    console.log(i);
+  };
+
+  return (
+    <Dialog maxWidth="sm" fullWidth onClose={onClose} open={true}>
+      <DialogTitle
+        disableTypography
+        onClose={onClose}
+        style={{ display: "flex" }}
+      >
+        <Typography variant="h5">{`Load a Ballot`}</Typography>
+        <Box flexGrow={1} />
+        <IconButton
+          aria-label="close"
+          className={classes.closeButton}
+          onClick={onClose}
+          size="small"
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <TextField
+          autoFocus
+          id="Ballot ID"
+          value={ballotId}
+          required
+          onChange={onBallotIdChange}
+          variant="outlined"
+          label="Ballot ID"
+          fullWidth
+          margin="dense"
+          style={{
+            marginBottom: 20,
+          }}
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button color="github" onClick={onClose}>
+          Cancel
+        </Button>
+        <Button autoFocus color="github" onClick={onLoad}>
+          Load
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+
 function CreateBallot({ email, onClose }) {
   const classes = useStyles();
   const obj = useSelector((o) => o);
@@ -246,8 +307,10 @@ export default function Profile(props) {
     classes.imgRoundedCircle,
     classes.imgFluid
   );
-  const [open, setOpen] = useState(false);
   const [ballotOpen, setBallotOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loadOpen, setLoadOpen] = useState(false);
+  const [ballotId, setBallotId] = useState("");
   const [idNum, setIdNum] = useState("");
   const [email, setEmail] = useState(profileObj ? profileObj["email"] : "");
   const [perm, SetPerm] = useState(false);
@@ -261,7 +324,7 @@ export default function Profile(props) {
           variant: "success",
         });
       } else if (i == "already Registered") {
-        enqueueSnackbar("You have already registered.", {
+        enqueueSnackbar("You are already registered.", {
           variant: "info",
         });
       } else {
@@ -281,6 +344,9 @@ export default function Profile(props) {
       web3: web3,
     });
   };
+  const onBallotIdChange = (e) => {
+    setBallotId(e.target.value);
+  }
   const onClose = () => {
     setOpen(false);
   };
@@ -298,12 +364,19 @@ export default function Profile(props) {
     <div>
       <Header
         color="transparent"
-        brand="Evoting System"
+        brand="Digital Voting System"
         fixed
         changeColorOnScroll={{
           height: 200,
           color: "white",
         }}
+        rightLinks={
+          <List className={classes.list}>
+            <ListItem className={classes.listItem}>
+            </ListItem>
+          </List>
+        }
+
       />
       <Parallax
         small
@@ -371,9 +444,14 @@ export default function Profile(props) {
                       style={{ marginRight: 55 }}
                       onClick={() => setBallotOpen(true)}
                     >
-                      Create Ballot
+                      Create a Ballot
                     </Button>
-                    <Button color="success">Load Ballot</Button>
+                    <Button
+                      color="success"
+                      onClick={() => setLoadOpen(true)}
+                    >
+                      Load a Ballot
+                    </Button>
                   </Box>
                 </Box>
               </GridItem>
@@ -394,6 +472,13 @@ export default function Profile(props) {
               <CreateBallot
                 onClose={() => setBallotOpen(false)}
                 email={profileObj["email"]}
+              />
+            )}
+            {loadOpen && (
+              <LoadBallot
+                ballotId={ballotId}
+                onBallotIdChange={onBallotIdChange}
+                onClose={() => setLoadOpen(false)}
               />
             )}
           </div>

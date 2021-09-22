@@ -43,7 +43,7 @@ export function TopBar() {
     >
       <div className={classes.navigation}>
         <Header
-          brand="Evoting System"
+          brand="Digital Voting System"
           color="dark"
           rightLinks={
             <List className={classes.list}>

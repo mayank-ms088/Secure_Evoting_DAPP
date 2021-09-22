@@ -19,6 +19,7 @@ import CustomDropdown from "components/CustomDropdown/CustomDropdown.js";
 import Button from "components/CustomButtons/Button.js";
 
 import styles from "assets/jss/material-kit-react/components/headerLinksStyle.js";
+import { Box } from "@material-ui/core";
 
 const useStyles = makeStyles(styles);
 
@@ -26,7 +27,7 @@ export default function HeaderLinks(props) {
   const classes = useStyles();
   return (
     <List className={classes.list}>
-      <ListItem className={classes.listItem}>
+      {/* <ListItem className={classes.listItem}>
         <CustomDropdown
           noLiPadding
           buttonText="Components"
@@ -48,15 +49,21 @@ export default function HeaderLinks(props) {
             </a>,
           ]}
         />
-      </ListItem>
+      </ListItem> */}
+      <Box flexGrow={1}></Box>
       <ListItem className={classes.listItem}>
         <Button
-          href="https://www.creative-tim.com/product/material-kit-react?ref=mkr-navbar"
+          href="/home"
           color="transparent"
           target="_blank"
           className={classes.navLink}
+          style={{
+            color: "white",
+            fontSize: "1em",
+            fontFamily: "Comic Sans MS",
+          }}
         >
-          <CloudDownload className={classes.icons} /> Download
+          Back to Home
         </Button>
       </ListItem>
       <ListItem className={classes.listItem}>
