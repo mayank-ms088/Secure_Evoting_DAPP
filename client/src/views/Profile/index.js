@@ -12,8 +12,8 @@ import GridItem from "components/Grid/GridItem.js";
 import Parallax from "components/Parallax/Parallax.js";
 import Button from "components/CustomButtons/Button";
 import Datetime from "react-datetime";
-import List from "components/Header/HeaderLinks";
-import ListItem from "components/Header/HeaderLinks";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
 import {
   Avatar,
   Box,
@@ -31,13 +31,15 @@ import {
   Typography,
 } from "@material-ui/core";
 import { Check as CheckIcon } from "react-feather";
+import { Home as HomeIcon } from "react-feather";
 import CloseIcon from "@material-ui/icons/Close";
 import styles from "../../assets/jss/material-kit-react/views/profilePage.js";
 import { registerToVote } from "core/utils/utils.js";
 import { useSelector } from "react-redux";
 import { useSnackbar } from "notistack";
 import { ballotSetup } from "core/utils/utils.js";
-import { set } from "nprogress";
+import { Redirect } from "react-router";
+import { getData } from "core/utils/utils.js";
 
 const useStyles = makeStyles(styles);
 
@@ -124,58 +126,82 @@ function LoadBallot({
   ballotId,
   onBallotIdChange,
   onClose,
+  enqueueSnackbar,
+  proData,
 }) {
   const classes = useStyles();
-  const onLoad = (i) => {
-    console.log(i);
+  const [data, setData] = useState(null);
+  const obj = useSelector((o) => o);
+  const onLoad = (i, data) => {
+    console.log(data);
+    // if (i != "success") {
+    //   enqueueSnackbar(i, { variant: "error" });
+    // } else {
+    //   setData(data);
+    // }
   };
-
+  const handleLoad = () => {
+    getData({ ballotID: ballotId, onLoad: onLoad, obj: obj });
+  };
   return (
-    <Dialog maxWidth="sm" fullWidth onClose={onClose} open={true}>
-      <DialogTitle
-        disableTypography
-        onClose={onClose}
-        style={{ display: "flex" }}
-      >
-        <Typography variant="h5">{<b>Load a Ballot</b>}</Typography>
-        <Box flexGrow={1} />
-        <IconButton
-          aria-label="close"
-          className={classes.closeButton}
-          onClick={onClose}
-          size="small"
+    <>
+      <Dialog maxWidth="sm" fullWidth onClose={onClose} open={true}>
+        <DialogTitle
+          disableTypography
+          onClose={onClose}
+          style={{ display: "flex" }}
         >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers>
-        <TextField
-          autoFocus
-          id="Ballot ID"
-          value={ballotId}
-          required
-          onChange={onBallotIdChange}
-          variant="outlined"
-          label="Ballot ID"
-          fullWidth
-          margin="dense"
-          style={{
-            marginBottom: 20,
+          <Typography variant="h5">{`Load a Ballot`}</Typography>
+          <Box flexGrow={1} />
+          <IconButton
+            aria-label="close"
+            className={classes.closeButton}
+            onClick={onClose}
+            size="small"
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          <TextField
+            autoFocus
+            id="Ballot ID"
+            value={ballotId}
+            required
+            onChange={onBallotIdChange}
+            variant="outlined"
+            label="Ballot ID"
+            fullWidth
+            margin="dense"
+            style={{
+              marginBottom: 20,
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button color="github" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button autoFocus color="github" onClick={handleLoad}>
+            Load
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {data && (
+        <Redirect
+          to={{
+            pathname: "/ballot",
+            state: {
+              data: data["data"],
+              proData: proData,
+              title: data["title"],
+            },
           }}
         />
-      </DialogContent>
-      <DialogActions>
-        <Button color="github" onClick={onClose}>
-          Cancel
-        </Button>
-        <Button autoFocus color="github" onClick={onLoad}>
-          Load
-        </Button>
-      </DialogActions>
-    </Dialog>
+      )}
+    </>
   );
 }
-
 
 function CreateBallot({ email, onClose, enqueueSnackbar }) {
   const classes = useStyles();
@@ -212,7 +238,7 @@ function CreateBallot({ email, onClose, enqueueSnackbar }) {
       accounts: obj["accounts"],
     });
   };
-  console.log(ballotid);
+
   return (
     <Dialog maxWidth="md" fullWidth onClose={onClose} open={true}>
       <DialogTitle
@@ -416,7 +442,7 @@ export default function Profile(props) {
   };
   const onBallotIdChange = (e) => {
     setBallotId(e.target.value);
-  }
+  };
   const onClose = () => {
     setOpen(false);
   };
@@ -432,22 +458,43 @@ export default function Profile(props) {
 
   return (
     <div>
-      <Header
-        color="transparent"
-        brand="Digital Voting System"
-        fixed
-        changeColorOnScroll={{
-          height: 200,
-          color: "white",
-        }}
-        rightLinks={
-          <List className={classes.list}>
-            <ListItem className={classes.listItem}>
-            </ListItem>
-          </List>
-        }
+      <div className={classes.navigation}>
+        <Header
+          color="transparent"
+          brand={
+            <span
+              style={{
+                fontSize: "2em",
+              }}
+            >
+              Digital Voting System
+            </span>
+          }
+          fixed
+          changeColorOnScroll={{
+            height: 200,
+            color: "white",
+          }}
+          rightLinks={
+            <List className={classes.list}>
+              <ListItem className={classes.listItem}>
+                <Button
+                  href="/home"
+                  color="transparent"
+                  className={classes.navLink}
+                  style={{
+                    fontSize: "1em",
+                  }}
+                  startIcon={<HomeIcon />}
+                >
+                  Back to Home
+                </Button>
+              </ListItem>
+            </List>
+          }
+        />
+      </div>
 
-      />
       <Parallax
         small
         filter
@@ -516,11 +563,8 @@ export default function Profile(props) {
                     >
                       <b>Create a Ballot</b>
                     </Button>
-                    <Button
-                      color="success"
-                      onClick={() => setLoadOpen(true)}
-                    >
-                      <b>Load a Ballot</b>
+                    <Button color="success" onClick={() => setLoadOpen(true)}>
+                      Load a Ballot
                     </Button>
                   </Box>
                 </Box>
@@ -550,6 +594,8 @@ export default function Profile(props) {
                 ballotId={ballotId}
                 onBallotIdChange={onBallotIdChange}
                 onClose={() => setLoadOpen(false)}
+                proData={profileObj}
+                enqueueSnackbar={enqueueSnackbar}
               />
             )}
           </div>
