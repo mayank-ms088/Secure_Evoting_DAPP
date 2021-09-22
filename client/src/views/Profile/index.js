@@ -62,7 +62,7 @@ function Register({
         onClose={onClose}
         style={{ display: "flex" }}
       >
-        <Typography variant="h5">{`Register to Vote`}</Typography>
+        <Typography variant="h5">{<b>Register to Vote</b>}</Typography>
         <Box flexGrow={1} />
         <IconButton
           aria-label="close"
@@ -247,7 +247,7 @@ function CreateBallot({ email, onClose, enqueueSnackbar }) {
         onClose={onClose}
         style={{ display: "flex" }}
       >
-        <Typography variant="h5">{`Create New Ballot`}</Typography>
+        <Typography variant="h5">{<b>Create New Ballot</b>}</Typography>
         <Box flexGrow={1} />
         <IconButton
           aria-label="close"
@@ -538,7 +538,7 @@ export default function Profile(props) {
               <GridItem xs={12}>
                 <Box display="flex" width="100%" justifyContent="center" py={4}>
                   <Button onClick={() => setOpen(true)} color="success">
-                    Register to Vote
+                    <b>Register to Vote</b>
                   </Button>
                 </Box>
               </GridItem>
@@ -562,7 +562,7 @@ export default function Profile(props) {
                       style={{ marginRight: 55 }}
                       onClick={() => setBallotOpen(true)}
                     >
-                      Create a Ballot
+                      <b>Create a Ballot</b>
                     </Button>
                     <Button color="success" onClick={() => setLoadOpen(true)}>
                       Load a Ballot

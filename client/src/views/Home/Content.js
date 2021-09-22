@@ -61,7 +61,7 @@ export function Content() {
               marginBottom: 40,
             }}
           >
-            Sign in using google
+            <ul>Sign in using google</ul>
           </Typography>
         </Box>
       </Box>
