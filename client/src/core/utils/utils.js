@@ -12,11 +12,9 @@ export const registerToVote = function ({
   web3,
 }) {
   //var t0 = performance.now()
-
   if (permreq != 1) {
     permreq = 0;
   }
-
   var domain = email.replace(/.*@/, "");
 
   Registrar.deployed().then(function (contract) {
@@ -41,9 +39,9 @@ export const registerToVote = function ({
           contract
             .registerVoter(
               web3.utils.asciiToHex(email),
-              web3.utils.asciiToHex(idNum),
+              parseInt(idNum),
               web3.utils.asciiToHex(domain),
-              web3.utils.asciiToHex(permreq),
+              Number(permreq),
               {
                 gas: 2500000,
                 from: accounts[0],
@@ -94,7 +92,7 @@ export const voteForCandidate = function ({
     contract
       .checkVoter(email, {
         gas: 2500000,
-        from: web3.eth.accounts[0],
+        from: accounts[0],
       })
       .then(function (v) {
         var voterCheck = v.toString();
@@ -316,7 +314,7 @@ function vote(i, candidateArray, email, votingAddress, votesArray) {
     contract
       .voteForCandidate(votesArray, email, candidateArray, {
         gas: 2500000,
-        from: web3.eth.accounts[0],
+        from: accounts[0],
       })
       .then(function () {
         getVotes(votingAddress);
@@ -328,8 +326,7 @@ function vote(i, candidateArray, email, votingAddress, votesArray) {
 
 export const ballotSetup = function ({
   email,
-  date,
-  time,
+  endDate,
   ballottype,
   title,
   choices,
@@ -338,8 +335,10 @@ export const ballotSetup = function ({
   whitelisted,
   Registrar,
   Creator,
+  Voting,
   web3,
   onCreation,
+  accounts,
 }) {
   Registrar.deployed().then(function (contract) {
     contract.checkVoter.call(web3.utils.asciiToHex(email)).then(function (v) {
@@ -363,14 +362,14 @@ export const ballotSetup = function ({
               );
               return;
             } else {
-              var enddate = Date.parse(date).getTime() / 1000;
+              // var enddate = Date.parse(date).getTime() / 1000;
               //Testnet is plus 7 hours
               //-21600 to get original end date and time on testnet
-              var timeArray = time.split(":");
+              // var timeArray = time.split(":");
               //Testnet is plus 7 hours, uncomment this line if testing on testnet
               //var seconds = ((timeArray[0]*60)*60) + (timeArray[1]*60) + 21600
-              var seconds = timeArray[0] * 60 * 60 + timeArray[1] * 60;
-              enddate += seconds;
+              // var seconds = timeArray[0] * 60 * 60 + timeArray[1] * 60;
+              // enddate += seconds;
               var choicesArray = choices.split(/\s*,\s*/);
               var whitelistedArray = whitelisted.split(/\s*,\s*/);
               let ballotid = Math.floor(Math.random() * 4294967295);
@@ -378,15 +377,15 @@ export const ballotSetup = function ({
               Creator.deployed().then(function (contract) {
                 contract
                   .createBallot(
-                    enddate,
-                    ballottype,
+                    endDate,
+                    Number(ballottype),
                     votelimit,
                     ballotid,
                     title,
-                    whitelist,
+                    Number(whitelist),
                     {
                       gas: 2500000,
-                      from: web3.eth.accounts[0],
+                      from: accounts[0],
                     }
                   )
                   .then(function () {
@@ -397,10 +396,19 @@ export const ballotSetup = function ({
                         votingAddress,
                         choicesArray,
                         whitelistedArray,
-                        whitelist,
-                        ballotid
+                        Number(whitelist),
+                        ballotid,
+                        accounts,
+                        Voting,
+                        web3
                       );
-                      registerBallot(votingAddress, ballotid);
+                      registerBallot(
+                        votingAddress,
+                        ballotid,
+                        accounts,
+                        Registrar,
+                        onCreation
+                      );
                     });
                   });
               });
@@ -411,19 +419,21 @@ export const ballotSetup = function ({
   });
 };
 
-function registerBallot(votingaddress, ballotid) {
+function registerBallot(
+  votingaddress,
+  ballotid,
+  accounts,
+  Registrar,
+  onCreation
+) {
   Registrar.deployed().then(function (contract) {
     contract
       .setAddress(votingaddress, ballotid, {
         gas: 2500000,
-        from: web3.eth.accounts[0],
+        from: accounts[0],
       })
       .then(function () {
-        window.alert(
-          "Ballot creation successful! Ballot ID: " +
-            ballotid +
-            "\nPlease write the down the Ballot ID because it will be used to load your ballot allowing users to vote"
-        );
+        onCreation("success", ballotid);
       });
   });
 }
@@ -433,26 +443,33 @@ function fillSetup(
   choicesArray,
   whitelistedArray,
   whitelist,
-  ballotid
+  ballotid,
+  accounts,
+  Voting,
+  web3
 ) {
-  fillCandidates(votingAddress, choicesArray);
+  fillCandidates(votingAddress, choicesArray, accounts, Voting, web3);
   if (whitelist == 1) {
-    fillWhitelisted(votingAddress, whitelistedArray);
+    fillWhitelisted(votingAddress, whitelistedArray, accounts, Voting, web3);
   }
 }
 
-function fillCandidates(votingAddress, choicesArray) {
+function fillCandidates(votingAddress, choicesArray, accounts, Voting, web3) {
+  let choices = [];
+  choicesArray.map((v) => {
+    choices.push(web3.utils.asciiToHex(v));
+  });
   Voting.at(votingAddress).then(function (contract) {
     contract
-      .setCandidates(choicesArray, {
+      .setCandidates(choices, {
         gas: 2500000,
-        from: web3.eth.accounts[0],
+        from: accounts[0],
       })
       .then(function () {
         contract
           .hashCandidates({
             gas: 2500000,
-            from: web3.eth.accounts[0],
+            from: accounts[0],
           })
           .then(function () {
             //
@@ -461,12 +478,12 @@ function fillCandidates(votingAddress, choicesArray) {
   });
 }
 
-function fillWhitelisted(votingAddress, whitelistedArray) {
+function fillWhitelisted(votingAddress, whitelistedArray, accounts, Voting) {
   Voting.at(votingAddress).then(function (contract) {
     contract
       .setWhitelisted(whitelistedArray, {
         gas: 2500000,
-        from: web3.eth.accounts[0],
+        from: accounts[0],
       })
       .then(function () {
         //
