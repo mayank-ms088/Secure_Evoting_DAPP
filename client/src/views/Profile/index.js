@@ -13,7 +13,10 @@ import Parallax from "components/Parallax/Parallax.js";
 import Button from "components/CustomButtons/Button";
 import Datetime from "react-datetime";
 import {
+  Avatar,
   Box,
+  Card,
+  CardContent,
   Checkbox,
   Dialog,
   DialogActions,
@@ -25,6 +28,7 @@ import {
   TextField,
   Typography,
 } from "@material-ui/core";
+import { Check as CheckIcon } from "react-feather";
 import CloseIcon from "@material-ui/icons/Close";
 import styles from "../../assets/jss/material-kit-react/views/profilePage.js";
 import { registerToVote } from "core/utils/utils.js";
@@ -112,31 +116,42 @@ function Register({
     </Dialog>
   );
 }
-function CreateBallot({ email, onClose }) {
+function CreateBallot({ email, onClose, enqueueSnackbar }) {
   const classes = useStyles();
   const obj = useSelector((o) => o);
   const [ballot, setBallot] = useState({
     email: email,
-    date: "",
-    time: "",
+    endDate: "",
     ballottype: 0,
     title: "",
     choices: "",
     votelimit: "",
     whitelist: false,
-    whitelisted: [],
+    whitelisted: "",
   });
-  const onCreation = (i) => {
-    console.log(i);
+  const [success, setSuccess] = useState(false);
+  const [ballotid, setBallotId] = useState(null);
+  const onCreation = (i, id) => {
+    if (i != "success") {
+      enqueueSnackbar(i, { variant: "error" });
+      onClose();
+    } else {
+      setBallotId(id);
+      setSuccess(true);
+      enqueueSnackbar("Ballot Created Successfully!", { variant: "success" });
+    }
   };
+
   const handleConfirm = () => {
     ballotSetup({
       ...ballot,
       ...obj["contracts"],
       web3: obj["web3"],
       onCreation: onCreation,
+      accounts: obj["accounts"],
     });
   };
+  console.log(ballotid);
   return (
     <Dialog maxWidth="md" fullWidth onClose={onClose} open={true}>
       <DialogTitle
@@ -156,77 +171,132 @@ function CreateBallot({ email, onClose }) {
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
-        <TextField
-          autoFocus
-          id="Email ID"
-          value={ballot["email"]}
-          required
-          onChange={(e) => setBallot({ ...ballot, email: e.target.value })}
-          variant="outlined"
-          label="Email ID"
-          margin="dense"
-          fullWidth
-          disabled
-        />
-        <Typography variant="body1">
-          Poll
-          <Switch
-            checked={Boolean(ballot.ballottype)}
-            onChange={(e) => {
-              setBallot({ ...ballot, ballottype: e.target.checked });
-            }}
-          />
-          Elections
-        </Typography>
-        <TextField
-          autoFocus
-          id="title"
-          value={ballot["title"]}
-          required
-          onChange={(e) => setBallot({ ...ballot, title: e.target.value })}
-          variant="outlined"
-          label="Title"
-          margin="dense"
-          fullWidth
-        />
-        <TextField
-          autoFocus
-          id="choices"
-          value={ballot["choices"]}
-          required
-          onChange={(e) => setBallot({ ...ballot, choices: e.target.value })}
-          variant="outlined"
-          label="Candidates"
-          helperText="Use (,) to seperate the candidates names."
-          margin="dense"
-          fullWidth
-        />
-        <TextField
-          autoFocus
-          id="votelimit"
-          value={ballot["votelimit"]}
-          required
-          onChange={(e) => setBallot({ ...ballot, votelimit: e.target.value })}
-          variant="outlined"
-          label="Vote Limit"
-          helperText="No. of votes allowed per person."
-          margin="dense"
-          fullWidth
-        />
+        {!success ? (
+          <>
+            <TextField
+              autoFocus
+              id="Email ID"
+              value={ballot["email"]}
+              required
+              onChange={(e) => setBallot({ ...ballot, email: e.target.value })}
+              variant="outlined"
+              label="Email ID"
+              margin="dense"
+              fullWidth
+              disabled
+            />
+            <Typography variant="body1">
+              Poll
+              <Switch
+                checked={Boolean(ballot.ballottype)}
+                onChange={(e) => {
+                  setBallot({ ...ballot, ballottype: e.target.checked });
+                }}
+              />
+              Elections
+            </Typography>
+            <TextField
+              autoFocus
+              id="title"
+              value={ballot["title"]}
+              required
+              onChange={(e) => setBallot({ ...ballot, title: e.target.value })}
+              variant="outlined"
+              label="Title"
+              margin="dense"
+              fullWidth
+            />
+            <TextField
+              autoFocus
+              id="choices"
+              value={ballot["choices"]}
+              required
+              onChange={(e) =>
+                setBallot({ ...ballot, choices: e.target.value })
+              }
+              variant="outlined"
+              label="Candidates"
+              helperText="Use (,) to seperate the candidates names."
+              margin="dense"
+              fullWidth
+            />
+            <TextField
+              autoFocus
+              id="votelimit"
+              value={ballot["votelimit"]}
+              required
+              onChange={(e) =>
+                setBallot({ ...ballot, votelimit: e.target.value })
+              }
+              variant="outlined"
+              label="Vote Limit"
+              helperText="No. of votes allowed per person."
+              margin="dense"
+              fullWidth
+            />
 
-        <Datetime
-          value={ballot["date"]}
-          onChange={(e) => setBallot({ ...ballot, date: e })}
-          inputProps={{ placeholder: "Poll End Date and Time" }}
-        />
+            <Datetime
+              value={
+                ballot["endDate"] ? new Date(ballot["endDate"] * 1000) : ""
+              }
+              onChange={(e) =>
+                setBallot({ ...ballot, endDate: e.toDate().getTime() / 1000 })
+              }
+              inputProps={{ placeholder: "Poll End Date and Time" }}
+            />
+          </>
+        ) : (
+          <Card>
+            <CardContent>
+              <Box maxWidth={450} mx="auto">
+                <Box display="flex" justifyContent="center">
+                  <Avatar style={{ backgroundColor: "green" }}>
+                    <CheckIcon />
+                  </Avatar>
+                </Box>
+                <Box mt={2}>
+                  <Typography variant="h3" color="textPrimary" align="center">
+                    Success!
+                  </Typography>
+                </Box>
+                <Box mt={2}>
+                  <Typography
+                    variant="subtitle1"
+                    color="textSecondary"
+                    align="center"
+                  >
+                    {"Your Ballot is created successfully."}
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    color="textSecondary"
+                    align="center"
+                  >
+                    {`Ballot ID: `}
+                    <b>{`${ballotid}`}</b>
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    color="textSecondary"
+                    align="center"
+                  >
+                    {`Copy this Ballot ID to Load the Ballot and Vote`}
+                  </Typography>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
       </DialogContent>
       <DialogActions>
         <Button color="github" onClick={onClose}>
-          Cancel
+          Close
         </Button>
-        <Button autoFocus color="github" onClick={handleConfirm}>
-          Confirm
-        </Button>
+        {!success && (
+          <Button autoFocus color="github" onClick={handleConfirm}>
+            Confirm
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
@@ -394,6 +464,7 @@ export default function Profile(props) {
               <CreateBallot
                 onClose={() => setBallotOpen(false)}
                 email={profileObj["email"]}
+                enqueueSnackbar={enqueueSnackbar}
               />
             )}
           </div>
