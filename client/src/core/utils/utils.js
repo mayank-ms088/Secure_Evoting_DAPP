@@ -251,7 +251,8 @@ function add(
     .get(url)
     .then(function (response) {
       verifyTimestamp(
-        response.data,
+        response.data.toString(),
+
         i,
         candidateArray,
         email,
