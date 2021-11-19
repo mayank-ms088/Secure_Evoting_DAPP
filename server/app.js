@@ -1,75 +1,45 @@
-//index.js
-
-/*  EXPRESS */
-
+const http = require("http");
 const express = require("express");
-const app = express();
-const session = require("express-session");
 
-app.use(
-  session({
-    resave: false,
-    saveUninitialized: true,
-    secret: "SECRET",
-  })
-);
+// Homomorphic Encryption Library
+const paillierBigint = require("paillier-bigint");
+const { publicKey, privateKey } = paillierBigint.generateRandomKeysSync(128);
+
+const PORT = 8080;
+const app = express();
 
 app.get("/", function (req, res) {
-  res.render("pages/auth");
+  res.send("Backend Server");
 });
 
-const port = process.env.PORT || 8080;
-app.listen(port, () => console.log("App listening on port " + port));
-
-/*  PASSPORT SETUP  */
-
-const passport = require("passport");
-var userProfile;
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-app.get("/success", (req, res) => res.send(userProfile));
-app.get("/error", (req, res) => res.send("error logging in"));
-
-passport.serializeUser(function (user, cb) {
-  cb(null, user);
+app.listen(PORT, function (res) {
+  console.log("Backend Server Listening on PORT " + PORT);
 });
 
-passport.deserializeUser(function (obj, cb) {
-  cb(null, obj);
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
 });
 
-/*  Google AUTH  */
+app.get("/encrypt/:id", function (req, res) {
+  var ekey = req.params.id;
+  ekey = publicKey.encrypt(parseInt(ekey));
+  res.send(ekey.toString());
+});
 
-const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
-const GOOGLE_CLIENT_ID =
-  "734928268076-dki2mrdmbjme8t7rqirtv80g3bbhn219.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET = "U5pCg2vCsoJ_dtLv6sLOL0nE";
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: GOOGLE_CLIENT_ID,
-      clientSecret: GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/google/callback",
-    },
-    function (accessToken, refreshToken, profile, done) {
-      userProfile = profile;
-      return done(null, userProfile);
-    }
-  )
-);
+app.get("/decrypt/:id", function (req, res) {
+  var dkey = req.params.id;
+  dkey = privateKey.decrypt(BigInt(dkey)).toString();
+  res.send(dkey);
+});
 
-app.get(
-  "/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-  "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: "/error" }),
-  function (req, res) {
-    // Successful authentication, redirect success.
-    res.redirect("/success");
-  }
-);
+app.get("/add/:id/:id2", function (req, res) {
+  var ein1 = req.params.id;
+  var ein2 = req.params.id2;
+  eadd = publicKey.addition(BigInt(Number(ein1)), BigInt(Number(ein2)));
+  res.send(eadd.toString());
+});

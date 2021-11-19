@@ -69,14 +69,14 @@ contract Voting {
      
         for(uint i = 0; i < c.candidateList.length; i++) {
             tempCandidate = c.candidateList[i];
-            c.candidateHash[tempCandidate] = sha256(abi.encodePacked(tempCandidate));
-            c.votesReceived[sha256(abi.encodePacked(tempCandidate))] = 1;
+            c.candidateHash[tempCandidate] = keccak256(bytes32ToString(tempCandidate));
+            c.votesReceived[keccak256(bytes32ToString(tempCandidate))] = 1;
         }
     }
 
     function voteForCandidate(uint256[] memory _votes, bytes32 _email, bytes32[] memory _candidates) public {
-        if (checkTimelimit() == false || checkVoteattempts() == false) revert();
-        if (checkWhitelist() == true && checkifWhitelisted(_email) == false) revert();
+        // if (checkTimelimit() == false || checkVoteattempts() == false) revert();
+        // if (checkWhitelist() == true && checkifWhitelisted(_email) == false) revert();
         tempVotes = _votes;
         tempCandidates = _candidates;
         v.attemptedVotes[msg.sender] += 1;
@@ -101,7 +101,7 @@ contract Voting {
         return c.votesReceived[cHash];
     }
 
-    function bytes32ToString(bytes32 x) private pure returns (string memory) {
+    function bytes32ToString(bytes32 x) private pure returns (bytes memory) {
         bytes memory bytesString = new bytes(32);
         uint charCount = 0;
         for (uint j = 0; j < 32; j++) {
@@ -115,7 +115,7 @@ contract Voting {
         for (uint j = 0; j < charCount; j++) {
             bytesStringTrimmed[j] = bytesString[j];
         }
-        return string(bytesStringTrimmed);
+        return (bytesStringTrimmed);
     }
 
     function validCandidate(bytes32 cHash) public view returns (bool) {

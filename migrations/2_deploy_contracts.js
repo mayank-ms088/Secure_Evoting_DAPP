@@ -18,9 +18,13 @@ module.exports = function (deployer, network, accounts) {
   );
   deployer.deploy(
     Registrar,
-    ["gmail.com", "yahoo.com", "hotmail.com"].map((x) =>
-      web3.utils.asciiToHex(x)
-    ),
+    [
+      "gmail.com",
+      "yahoo.com",
+      "hotmail.com",
+      "itbhu.ac.in",
+      "iitbhu.ac.in",
+    ].map((x) => web3.utils.asciiToHex(x)),
     {
       gas: 800000,
     }
