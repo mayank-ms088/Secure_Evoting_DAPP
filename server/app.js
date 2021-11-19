@@ -1,100 +1,18 @@
-// //index.js
-
-// /*  EXPRESS */
-
-// const express = require("express");
-// const app = express();
-// const session = require("express-session");
-
-// app.use(
-//   session({
-//     resave: false,
-//     saveUninitialized: true,
-//     secret: "SECRET",
-//   })
-// );
-
-// app.get("/", function (req, res) {
-//   res.render("pages/auth");
-// });
-
-// const port = process.env.PORT || 8080;
-// app.listen(port, () => console.log("App listening on port " + port));
-
-// /*  PASSPORT SETUP  */
-
-// const passport = require("passport");
-// var userProfile;
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-// app.get("/success", (req, res) => res.send(userProfile));
-// app.get("/error", (req, res) => res.send("error logging in"));
-
-// passport.serializeUser(function (user, cb) {
-//   cb(null, user);
-// });
-
-// passport.deserializeUser(function (obj, cb) {
-//   cb(null, obj);
-// });
-
-// /*  Google AUTH  */
-
-// const GoogleStrategy = require("passport-google-oauth").OAuth2Strategy;
-// const GOOGLE_CLIENT_ID =
-//   "734928268076-dki2mrdmbjme8t7rqirtv80g3bbhn219.apps.googleusercontent.com";
-// const GOOGLE_CLIENT_SECRET = "U5pCg2vCsoJ_dtLv6sLOL0nE";
-// passport.use(
-//   new GoogleStrategy(
-//     {
-//       clientID: GOOGLE_CLIENT_ID,
-//       clientSecret: GOOGLE_CLIENT_SECRET,
-//       callbackURL: "http://localhost:3000/auth/google/callback",
-//     },
-//     function (accessToken, refreshToken, profile, done) {
-//       userProfile = profile;
-//       return done(null, userProfile);
-//     }
-//   )
-// );
-
-// app.get(
-//   "/auth/google",
-//   passport.authenticate("google", { scope: ["profile", "email"] })
-// );
-
-// app.get(
-//   "/auth/google/callback",
-//   passport.authenticate("google", { failureRedirect: "/error" }),
-//   function (req, res) {
-//     // Successful authentication, redirect success.
-//     res.redirect("/success");
-//   }
-// );
-
 const http = require("http");
 
 var express = require("express");
-var paillier = require("jspaillier");
+const paillierBigint = require("paillier-bigint");
 var body = require("body-parser");
-var BigInteger = require("jsbn").BigInteger;
-require("datejs");
-
+const { publicKey, privateKey } = paillierBigint.generateRandomKeysSync(128);
+const PORT = 8080;
 var app = express();
-
-var keys = paillier.generateKeys(128);
-
-const hostname = "127.0.0.1";
-const port = 8080;
 
 app.get("/", function (req, res) {
   res.send("Backend Server");
 });
 
-app.listen(port, function (res) {
-  console.log("Backend Server Listening on Port " + port);
+app.listen(PORT, function (res) {
+  console.log("Backend Server Listening on PORT " + PORT);
 });
 
 app.use(function (req, res, next) {
@@ -108,24 +26,31 @@ app.use(function (req, res, next) {
 
 app.get("/encrypt/:id", function (req, res) {
   var ekey = req.params.id;
-  ekey = keys.pub.encrypt(new BigInteger(ekey)).toString();
-  res.send(ekey);
+  const t = ekey;
+  ekey = publicKey.encrypt(parseInt(ekey));
+
+  const d = privateKey.decrypt(ekey);
+  res.send(ekey.toString());
 });
 
 app.get("/decrypt/:id", function (req, res) {
   var dkey = req.params.id;
-  dkey = keys.sec.decrypt(new BigInteger(dkey)).toString();
+  dkey = privateKey.decrypt(BigInt(dkey)).toString();
   res.send(dkey);
 });
 
 app.get("/add/:id/:id2", function (req, res) {
   var ein1 = req.params.id;
   var ein2 = req.params.id2;
-  eadd = keys.pub.add(new BigInteger(ein1), new BigInteger(ein2)).toString();
-  res.send(eadd);
-});
+  eadd = publicKey.addition(BigInt(Number(ein1)), BigInt(Number(ein2)));
+  // const x = 1;
+  // const y = 1;
+  // const enc_x = publicKey.encrypt(x);
+  // const enc_y = publicKey.encrypt(y);
+  // const ed = publicKey.addition(enc_x, enc_y);
 
-app.get("/getTime", function (req, res) {
-  var timestamp = Math.round(new Date().getTime() / 1000);
-  res.send("" + timestamp);
+  // console.log(privateKey.decrypt(eadd).toString(), ed);
+  // console.log(ein1, ein2,privateKey.decrypt(eadd).toString() "addition");
+
+  res.send(eadd.toString());
 });

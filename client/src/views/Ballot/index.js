@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 // nodejs library that concatenates classes
 import classNames from "classnames";
 // @material-ui/core components
@@ -40,7 +40,7 @@ import { useSnackbar } from "notistack";
 import { ballotSetup } from "core/utils/utils.js";
 import CustomTables from "./Table.js";
 import { voteForCandidate } from "core/utils/utils.js";
-
+import { getData } from "core/utils/utils.js";
 const useStyles = makeStyles(styles);
 
 export default function Ballot(props) {
@@ -50,6 +50,11 @@ export default function Ballot(props) {
       state: { proData: profileObj, data, title, ballotid },
     },
   } = props;
+  const [vote_data, setVoteData] = useState({ data: [] });
+  useEffect(() => {
+    setVoteData({ data: data });
+  }, []);
+  console.log(vote_data);
   const obj = useSelector((o) => o);
   const imageClasses = classNames(
     classes.imgRaised,
@@ -64,11 +69,23 @@ export default function Ballot(props) {
     ballotID: ballotid,
   });
   const tableData = [];
-  data.map((v) => {
+  vote_data["data"].map((v) => {
     tableData.push({ candidateID: v.id, candidateName: v.name });
   });
+  const onLoad = (i, data) => {
+    if (i != "success") {
+      enqueueSnackbar(i, { variant: "error" });
+    } else {
+      setVoteData(data);
+    }
+  };
+  // console.log(vote);
+  const handleLoad = () => {
+    getData({ ballotID: ballotid, onLoad: onLoad, obj: obj });
+  };
   const onVote = (i) => {
-    console.log(i);
+    enqueueSnackbar("Your vote hase been casted.", { variant: "success" });
+    handleLoad();
   };
   const handleVote = () => {
     voteForCandidate({ ...vote, onVote: onVote });

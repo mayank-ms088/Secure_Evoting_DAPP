@@ -75,8 +75,8 @@ contract Voting {
     }
 
     function voteForCandidate(uint256[] memory _votes, bytes32 _email, bytes32[] memory _candidates) public {
-        if (checkTimelimit() == false || checkVoteattempts() == false) revert();
-        if (checkWhitelist() == true && checkifWhitelisted(_email) == false) revert();
+        // if (checkTimelimit() == false || checkVoteattempts() == false) revert();
+        // if (checkWhitelist() == true && checkifWhitelisted(_email) == false) revert();
         tempVotes = _votes;
         tempCandidates = _candidates;
         v.attemptedVotes[msg.sender] += 1;

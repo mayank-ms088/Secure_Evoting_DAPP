@@ -20,6 +20,7 @@
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "jspaillier": "^0.1.1",
+    "paillier-bigint": "^3.2.5",
     "passport": "^0.4.1",
     "passport-google-oauth": "^2.0.0"
   },

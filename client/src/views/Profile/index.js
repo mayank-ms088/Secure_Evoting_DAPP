@@ -462,15 +462,7 @@ export default function Profile(props) {
       <div className={classes.navigation}>
         <Header
           color="transparent"
-          brand={
-            <span
-              style={{
-                fontSize: "2em",
-              }}
-            >
-              Digital Voting System
-            </span>
-          }
+          brand=" Digital Voting System"
           fixed
           changeColorOnScroll={{
             height: 200,

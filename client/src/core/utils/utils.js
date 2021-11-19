@@ -21,7 +21,6 @@ export const registerToVote = function ({
   Registrar.deployed().then(function (contract) {
     contract.domainCheck.call(web3.utils.asciiToHex(domain)).then(function (v) {
       var domainValid = v.toString();
-      console.log(web3.utils.asciiToHex(domain));
       if (domainValid == "false") {
         onRegister("invalid email");
         return;
@@ -196,11 +195,12 @@ function encrypt(
       Voting.at(votingAddress).then(function (contract) {
         contract.votesFor.call(hcHash).then(function (v) {
           einput1 = v.toString();
-          einput1 = Number(einput1);
 
+          // einput1 = Number(einput1);
+          // console.log(response.data.toString(), einput1);
           if (einput1 != 0) {
             add(
-              response,
+              response.data.toString(),
               einput1,
               i,
               candidateArray,
@@ -579,6 +579,7 @@ async function getVotes(votingAddress, candidates, obj) {
     //   // window.alert("Results will be displayed once the voting period has ended (" + endtime + ")")
     // } else {
 
+    console.log(convVote);
     votes = await decrypt(convVote, name);
     // }
     data.push({ id: cvHash, name: name, votes: votes });
